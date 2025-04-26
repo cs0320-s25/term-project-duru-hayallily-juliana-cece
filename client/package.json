@@ -8,8 +8,10 @@
     "test": "npm run test:unit && npm run test:e2e"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.30.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-router-dom": "^7.5.2",
     "vite": "^6.3.3"
   }
 }
