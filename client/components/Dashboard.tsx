@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
+import { addPantryItem, getPantryItems, clearPantryItems, removePantryItem } from "../utils/firebaseUtils"; 
 
 const shelfStyle = {
   display: "flex",
@@ -64,41 +65,56 @@ const pantryEmojiSuggestions = ["🍝", "🍞", "🥛", "🍯", "🍏", "🍅", 
 
 const Dashboard: React.FC = () => {
   const { user } = useUser();
-  const [pantryItems, setPantryItems] = useState([
-    { name: "Pasta", emoji: "🍝" },
-    { name: "Bread", emoji: "🍞" },
-    { name: "Milk", emoji: "🥛" },
-    { name: "Jam", emoji: "🍯" },
-    { name: "Apple", emoji: "🍏" },
-  ]);
-  const [input, setInput] = useState("");
-  const [emoji, setEmoji] = useState(pantryEmojiSuggestions[0]);
+  const userId = user?.id;
 
-  const handleAdd = () => {
+  const [pantryItems, setPantryItems] = useState<{ name: string; emoji: string }[]>([]);
+  const [input, setInput] = useState("");
+  const [emoji, setEmoji] = useState("🍝");
+
+  useEffect(() => {
+    const fetchPantry = async () => {
+      if (!userId) return;
+      const items = await getPantryItems(userId);
+      setPantryItems(items);
+    };
+
+    fetchPantry();
+  }, [userId]);
+
+  const handleAdd = async () => {
     const trimmed = input.trim();
-    if (!trimmed) return;
+    if (!trimmed || !userId) return;
     if (pantryItems.some(item => item.name.toLowerCase() === trimmed.toLowerCase())) return;
-    setPantryItems([...pantryItems, { name: trimmed, emoji }]);
+
+    const newItem = { name: trimmed, emoji };
+    await addPantryItem(userId, newItem);  
+    setPantryItems([...pantryItems, newItem]);
     setInput("");
     setEmoji(pantryEmojiSuggestions[0]);
   };
 
-  const handleRemove = (name: string) => {
-    setPantryItems(pantryItems.filter(item => item.name !== name));
+  const handleRemove = async (name: string) => {
+    if (!userId) return;
+    await removePantryItem(userId, name);  
+    setPantryItems(pantryItems.filter(item => item.name !== name)); 
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleAdd();
   };
 
+  const handleClear = async () => {
+    if (!userId) return;
+    await clearPantryItems(userId);  
+    setPantryItems([]);
+  };
+
   return (
     <div style={pantryStyle}>
       <h1 style={{ color: "#b48a54" }}>
-        🧺 welcome to your pantry, {user?.firstName || "!"}!
+        🧺 Welcome to your pantry, {user?.firstName || "!"}
       </h1>
-      <p style={{ color: "#b48a54" }}>
-        here are your favorite pantry items:
-      </p>
+      <p style={{ color: "#b48a54" }}>Here are your pantry items:</p>
       <div style={shelfStyle}>
         {pantryItems.length === 0 && (
           <span style={{ color: "#e0c3a5" }}>(Your pantry is empty!)</span>
@@ -108,7 +124,7 @@ const Dashboard: React.FC = () => {
             <span style={{ marginRight: 4 }}>{item.emoji}</span>
             <span style={{ fontSize: "1rem", color: "#b48a54" }}>{item.name}</span>
             <button
-              onClick={() => handleRemove(item.name)}
+              onClick={() => handleRemove(item.name)} 
               style={removeButtonStyle}
               title={`Remove ${item.name}`}
             >
@@ -146,6 +162,24 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
       <div style={{ marginTop: "32px" }}>
+        <button
+          onClick={handleClear}
+          style={{
+            background: "#ffb4b4",
+            color: "#a23e3e",
+            border: "none",
+            padding: "12px 32px",
+            borderRadius: "8px",
+            cursor: "pointer",
+            fontWeight: "bold",
+            fontSize: "1rem",
+            boxShadow: "0 2px 8px #e0c3a5",
+          }}
+        >
+          clear all
+        </button>
+      </div>
+      <div style={{ marginTop: "32px" }}>
         <SignOutButton>
           <button
             style={{
@@ -158,7 +192,6 @@ const Dashboard: React.FC = () => {
               fontWeight: "bold",
               fontSize: "1rem",
               boxShadow: "0 2px 8px #e0c3a5",
-              transition: "background 0.2s",
             }}
           >
             log out

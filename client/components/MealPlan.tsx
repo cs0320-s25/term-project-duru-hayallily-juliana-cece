@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SignOutButton } from "@clerk/clerk-react";
+import { addMealPlanItem, getMealPlanItems, clearMealPlanItems } from "../utils/firebaseUtils"; 
+import { useUser } from "@clerk/clerk-react";
 
 const cardStyle = {
-  background: "#ffe9ec",
+  background: "#eafff0",
   borderRadius: "24px",
   padding: "40px 32px",
-  boxShadow: "0 4px 24px #f7b2b2",
+  boxShadow: "0 4px 24px #b4e2c1",
   maxWidth: "420px",
   margin: "300px auto",
   textAlign: "center",
@@ -14,14 +16,14 @@ const cardStyle = {
 const inputStyle = {
   padding: "10px",
   borderRadius: "8px",
-  border: "1px solid #f7b2b2",
+  border: "1px solid #b4e2c1",
   marginRight: "8px",
   fontSize: "1rem",
 };
 
 const buttonStyle = {
-  background: "#f7b2b2",
-  color: "#a23e3e",
+  background: "#b4e2c1",
+  color: "#3a5a40",
   border: "none",
   padding: "10px 20px",
   borderRadius: "8px",
@@ -47,22 +49,37 @@ const itemStyle = {
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
-  boxShadow: "0 2px 8px #f7b2b266",
+  boxShadow: "0 2px 8px #b4e2c133",
 };
 
 const MealPlan: React.FC = () => {
-  const [recipes, setRecipes] = useState<string[]>([]);
+  const { user } = useUser();
+  const [mealPlans, setMealPlans] = useState<string[]>([]);
   const [input, setInput] = useState<string>("");
 
-  const handleAdd = () => {
-    if (input.trim() && !recipes.includes(input.trim())) {
-      setRecipes([...recipes, input.trim()]);
-      setInput("");
+  const userId = user?.id;
+
+
+  useEffect(() => {
+    if (userId) {
+      getMealPlanItems(userId).then(setMealPlans);
     }
+  }, [userId]);
+
+  const handleAdd = async () => {
+    const trimmed = input.trim();
+    if (!trimmed || mealPlans.includes(trimmed)) return;
+    const updated = [...mealPlans, trimmed];
+    setMealPlans(updated);
+    setInput("");
+    if (userId) await addMealPlanItem(userId, trimmed);
   };
 
-  const handleRemove = (item: string) => {
-    setRecipes(recipes.filter(r => r !== item));
+  const handleClear = async () => {
+    if (userId) {
+      await clearMealPlanItems(userId);
+      setMealPlans([]);
+    }
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -71,69 +88,41 @@ const MealPlan: React.FC = () => {
 
   return (
     <div style={cardStyle}>
-      <h1 style={{ color: "#a23e3e", marginBottom: "8px" }}>
-        🍽️ plan your meals!
-      </h1>
-      <p style={{ color: "#a23e3e", marginBottom: "16px" }}>
-        Add recipes to your weekly meal plan:
-      </p>
+      <h1 style={{ color: "#3a5a40" }}>🍽️ Your Meal Plan</h1>
       <div>
         <input
           type="text"
-          placeholder="e.g. Spaghetti Carbonara"
+          placeholder="Add a meal..."
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={handleInputKeyDown}
           style={inputStyle}
         />
-        <button onClick={handleAdd} style={buttonStyle}>
-          Add
+        <button onClick={handleAdd} style={buttonStyle}>Add</button>
+        <button onClick={handleClear} style={{ ...buttonStyle, marginLeft: "12px", background: "#ffb4b4", color: "#a23e3e" }}>
+          clear all
         </button>
       </div>
+
       <ul style={listStyle}>
-        {recipes.length === 0 && (
-          <li style={{ color: "#f7b2b2", marginTop: "16px" }}>
-            (no recipes planned yet!)
-          </li>
-        )}
-        {recipes.map(item => (
-          <li key={item} style={itemStyle}>
-            <span>
-              <span role="img" aria-label="recipe" style={{ marginRight: 8 }}>
-                🍲
+        {mealPlans.length === 0 ? (
+          <li style={{ color: "#8fb996", marginTop: "16px" }}>(No meals planned yet!)</li>
+        ) : (
+          mealPlans.map(item => (
+            <li key={item} style={itemStyle}>
+              <span>
+                <span role="img" aria-label="meal" style={{ marginRight: 8 }}>🍲</span>
+                {item}
               </span>
-              {item}
-            </span>
-            <button
-              onClick={() => handleRemove(item)}
-              style={{
-                ...buttonStyle,
-                background: "#ffe9ec",
-                color: "#a23e3e",
-                marginLeft: "12px",
-                padding: "6px 14px",
-                fontSize: "0.9rem",
-                border: "1px solid #f7b2b2",
-              }}
-            >
-              Remove
-            </button>
-          </li>
-        ))}
+            </li>
+          ))
+        )}
       </ul>
+
       <div style={{ marginTop: "32px" }}>
         <SignOutButton>
-          <button
-            style={{
-              ...buttonStyle,
-              background: "#f9d29d",
-              color: "#b48a54",
-              marginLeft: 0,
-              marginTop: "16px",
-              border: "none",
-            }}
-          >
-            Log Out
+          <button style={{ ...buttonStyle, background: "#f9d29d", color: "#b48a54", marginLeft: 0 }}>
+            log out
           </button>
         </SignOutButton>
       </div>

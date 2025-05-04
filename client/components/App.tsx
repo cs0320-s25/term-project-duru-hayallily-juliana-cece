@@ -1,13 +1,40 @@
-import React from "react";
-import { Routes, Route, Link, useLocation, Navigate } from "react-router-dom";
-import { SignedIn, SignedOut, SignInButton, SignOutButton, UserButton } from "@clerk/clerk-react";
+import React, { useEffect } from "react";
+import { Routes, Route, Link, useLocation, useNavigate  } from "react-router-dom";
+import { SignedIn, SignedOut, SignInButton, SignOutButton, UserButton, useUser } from "@clerk/clerk-react";
 import Dashboard from "./Dashboard";
 import MealPlan from "./MealPlan";
 import GroceryList from "./GroceryList";
 import Profile from "./Profile";
+import { initializeApp } from "firebase/app";
 
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isSignedIn } = useUser();
+
+  useEffect(() => {
+    if (isSignedIn && location.pathname === "/") {
+      navigate("/dashboard");
+    }
+  }, [isSignedIn, location.pathname, navigate]);
+
+  
+  
+
+  const firebaseConfig = {
+    apiKey:'AIzaSyCqimlNe5AwhTG7o-wNyZLCW0mchaR-5WE',
+    authDomain: 'cs320finalproject.firebaseapp.com',
+    projectId: 'cs320finalproject',
+    storageBucket: 'cs320finalproject.appspot.com',
+    messagingSenderId: '23782981764',
+    appId: '1:23782981764:web:73094e0015f59e76f802d1',
+    databaseURL: `https://cs320finalproject-default-rtdb.firebaseio.com/`,
+  };
+
+  initializeApp(firebaseConfig);
+
+  
+
 
   return (
     <div className="App">
@@ -32,13 +59,13 @@ function App() {
               <li><h1 aria-label="splash-header">groceryly</h1></li>
               <li><h2>your meal planning solution!</h2></li>
               <SignedOut>
-                <SignInButton mode="redirect" redirectUrl="/dashboard">
+                <SignInButton mode="modal" redirectUrl="/dashboard">
                   <button className="button">log in</button>
                 </SignInButton>
               </SignedOut>
               <SignedIn>
                 <UserButton />
-                <SignOutButton redirectUrl="/" />
+                <SignOutButton />
               </SignedIn>
             </ul>
           </div>
@@ -46,16 +73,7 @@ function App() {
       )}
 
       <Routes>
-        <Route
-          path="/"
-          element={
-            <SignedIn>
-              <Navigate to="/dashboard" replace />
-            </SignedIn>
-            ||
-            <div>Welcome! Please log in.</div>
-          }
-        />
+        <Route path="/" element={<div>Welcome! Please log in.</div>} />
         <Route path="/dashboard" element={<SignedIn><Dashboard /></SignedIn>} />
         <Route path="/meal-plan" element={<SignedIn><MealPlan /></SignedIn>} />
         <Route path="/grocery-list" element={<SignedIn><GroceryList /></SignedIn>} />
