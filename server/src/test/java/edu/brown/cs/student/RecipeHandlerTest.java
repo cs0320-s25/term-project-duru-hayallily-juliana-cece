@@ -1,24 +1,22 @@
 package edu.brown.cs.student;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.Map;
 import main.edu.brown.cs.student.main.server.handlers.RecipeHandler;
 import main.edu.brown.cs.student.main.server.model.Ingredient;
 import main.edu.brown.cs.student.main.server.model.User;
 import main.edu.brown.cs.student.main.server.service.MockSpoonacularService;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.Map;
-
 import spark.Request;
 import spark.Response;
-
-import static org.mockito.Mockito.*;
 
 public class RecipeHandlerTest {
 
@@ -116,7 +114,8 @@ public class RecipeHandlerTest {
     // Add some items to the user's pantry
     User user = users.get("test-user");
     user.getPantry().addIngredient(new Ingredient(1001, "Butter", "Dairy", 0.5, "cup"));
-    user.getPantry().addIngredient(new Ingredient(1006, "All-Purpose Flour", "Baking", 2.0, "cups"));
+    user.getPantry()
+        .addIngredient(new Ingredient(1006, "All-Purpose Flour", "Baking", 2.0, "cups"));
 
     // Call the handler
     String responseJson = (String) handler.handle(mockRequest, mockResponse);

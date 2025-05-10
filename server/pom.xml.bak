@@ -94,7 +94,6 @@
 
   </dependencies>
   <build>
-    <sourceDirectory>src/main</sourceDirectory>
     <plugins>
       <!--
             The Compiler Plugin is used to compile the sources of your project.
@@ -239,6 +238,7 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M7</version>
       </plugin>
+
 
       <!-- The maven enforcer plugin enforces that the maven version is 3.6.0 -->
       <plugin>

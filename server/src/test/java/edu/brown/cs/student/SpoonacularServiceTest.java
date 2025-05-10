@@ -1,17 +1,16 @@
 package edu.brown.cs.student;
 
-import main.edu.brown.cs.student.main.server.model.Recipe;
-import main.edu.brown.cs.student.main.server.model.Ingredient;
-
-import main.edu.brown.cs.student.main.server.service.MockSpoonacularService;
-import org.junit.Before;
-import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import main.edu.brown.cs.student.main.server.model.Ingredient;
+import main.edu.brown.cs.student.main.server.model.Recipe;
+import main.edu.brown.cs.student.main.server.service.MockSpoonacularService;
+import org.junit.Before;
+import org.junit.Test;
 
 public class SpoonacularServiceTest {
 

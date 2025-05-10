@@ -1,25 +1,23 @@
 package edu.brown.cs.student;
 
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
+import java.lang.reflect.Type;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import main.edu.brown.cs.student.main.server.handlers.PantryCompareHandler;
 import main.edu.brown.cs.student.main.server.model.Ingredient;
 import main.edu.brown.cs.student.main.server.model.User;
 import main.edu.brown.cs.student.main.server.service.MockSpoonacularService;
 import org.junit.Before;
 import org.junit.Test;
-import static org.junit.Assert.*;
-
-import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import spark.Request;
 import spark.Response;
-
-import static org.mockito.Mockito.*;
 
 public class PantryCompareHandlerTest {
 
@@ -42,7 +40,9 @@ public class PantryCompareHandlerTest {
     // Add pantry items that match some of the ingredients in recipe #1
     testUser.getPantry().addIngredient(new Ingredient(1001, "Butter", "Dairy", 1.0, "cup"));
     testUser.getPantry().addIngredient(new Ingredient(1002, "Sugar", "Baking", 1.0, "cup"));
-    testUser.getPantry().addIngredient(new Ingredient(1006, "All-Purpose Flour", "Baking", 2.5, "cups"));
+    testUser
+        .getPantry()
+        .addIngredient(new Ingredient(1006, "All-Purpose Flour", "Baking", 2.5, "cups"));
 
     users.put(testUser.getId(), testUser);
 
@@ -63,7 +63,8 @@ public class PantryCompareHandlerTest {
   public void testHandleCompareWithRecipe() throws Exception {
     // Set up mock request with userId and recipeId
     when(mockRequest.queryParams("userId")).thenReturn("test-user");
-    when(mockRequest.queryParams("recipeId")).thenReturn("1"); // Chocolate Chip Cookies from mock data
+    when(mockRequest.queryParams("recipeId"))
+        .thenReturn("1"); // Chocolate Chip Cookies from mock data
 
     // Call the handler
     String responseJson = (String) handler.handle(mockRequest, mockResponse);
@@ -85,7 +86,8 @@ public class PantryCompareHandlerTest {
     assertTrue((double) responseMap.get("totalCount") > 3.0);
 
     // Verify missing ingredients list
-    List<Map<String, Object>> missingIngredients = (List<Map<String, Object>>) responseMap.get("missingIngredients");
+    List<Map<String, Object>> missingIngredients =
+        (List<Map<String, Object>>) responseMap.get("missingIngredients");
     assertNotNull(missingIngredients);
     assertFalse(missingIngredients.isEmpty());
   }
@@ -172,6 +174,7 @@ public class PantryCompareHandlerTest {
 
     // Verify error response
     assertEquals("error_processing", responseMap.get("result"));
-    assertTrue(((String) responseMap.get("message")).contains("Failed to compare pantry with recipe"));
+    assertTrue(
+        ((String) responseMap.get("message")).contains("Failed to compare pantry with recipe"));
   }
 }
