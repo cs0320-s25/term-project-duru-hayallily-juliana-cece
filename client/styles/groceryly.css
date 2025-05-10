@@ -1,0 +1,131 @@
+:root{
+    background-color: rgb(241, 234, 229);
+    font-family: "Josefin Sans", sans-serif;
+    font-weight: 300;
+}
+a{
+    text-decoration: none;
+}
+h1{
+    font-family: "Grandstander", sans-serif;
+    font-weight: 500;
+}
+h2{
+    font-family: "Sour Gummy", sans-serif;
+    font-weight: 300;
+}
+button {
+    padding: 1em 2em;
+    border: 0;
+    border-radius: 100px;
+    background-color: #B46A87;
+    color: rgb(241, 234, 229);
+    transition: all 0.5s;
+    -webkit-transition: all 0.5s;
+    font-size: 30px;
+    font-family: "Josefin Sans", sans-serif;
+    font-weight: 300;
+}
+button:hover {
+    background-color: #FF7264;
+    box-shadow: 0 0 20px #29526d50;
+    transform: scale(1.1);
+}
+button:active {
+    background-color: #FFDD64;
+    transition: all 0.25s;
+    -webkit-transition: all 0.25s;
+    box-shadow: none;
+    transform: scale(0.98);
+}
+/* These are for the sticky header at the top of the page.
+*/
+nav{
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background-color: #35573C;
+    padding: 10px;
+    border-width: 2px;
+    z-index: 1000;
+    filter: drop-shadow(4px 4px 10px rgb(57, 67, 75));
+
+}
+nav .nav_content{
+    height: 100%;
+    max-width: 1440px;
+    margin: auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+nav .nav_content .logo a{
+    padding-left: 20px;
+    font-size: 35px;
+    color: rgb(241, 234, 229);
+    font-family: "Grandstander", monospace;
+    font-weight: normal;
+}
+nav .nav_content .nav_links{
+    display: flex;
+    align-items: center;
+    padding-right: 2em;
+}
+nav .nav_links li{
+    list-style: none;
+    margin: 0 8px;
+}
+nav .nav_links a{
+    font-size: 20px;
+    color: rgb(241, 234, 229);
+    transition: all 0.3s ease;
+}
+
+/* Fun buttons with a transition
+*/
+.btn {padding-top:1em;}  
+.btn:hover .btn-slide-show-text1 {  margin-left: 65px;}  
+.btn-fill-bottom {  border: medium;  outline: currentcolor;  background: none;  text-align: center;  display: inline-block;  width: 120px;  height: 40px;  position: relative;  overflow: hidden;  transition: color 0.5s; border-radius: 2em; }  
+.btn-fill-bottom::before {  content: "";  position: absolute;  z-index: -1;  height: 200px;  width: 250px;  border-radius: 50%;  top: 100%;  left: 100%;  transition: 0.7s; }  
+.btn-fill-bottom:hover {  font-weight: 400; }  
+.btn-fill-bottom:hover::before {  top: -40px;  left: -40px;}  
+.btn-fill-bottom--green {  color: #FF7264;}  
+.btn-fill-bottom--green::before {  background: #FF7264;}  
+
+.splash{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 15em;
+    width: 110%;
+    background-image: url("./images/AdobeStock_1058066167.jpeg");
+    background-color: rgba(255,255,255,0.3);
+    background-blend-mode: lighten;
+    background-size: cover;
+    background-position: center;
+    background-size: 50%;
+    position: absolute;
+    left: -1%;
+}
+.splash-header{
+    display: flex;
+    width: 50%;
+    border-radius: 2em;
+    padding: 1em;
+    justify-content: center;
+    color: #35573C;
+    font-size: x-large;
+    text-align: center;
+    position: relative;
+    right: 5%;
+}
+.splash-header ul{
+    border: 0;
+    padding-right: 1.5em;
+    border-radius: 100px;
+    background-color: rgba(209, 187, 208, 0.4);
+    background-blend-mode: hard-light;
+    list-style-type: none;
+    box-shadow: 0 0 20px #29526d50;
+}
