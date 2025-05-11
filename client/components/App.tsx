@@ -43,11 +43,22 @@ function App() {
           <div className="logo">
             <h1><Link to="/">groceryly</Link></h1>
           </div>
-          <ul className="nav_links">
-            <li><Link to="/meal-plan" className="btn btn-fill-bottom btn-fill-bottom--green">meal plan</Link></li>
-            <li><Link to="/grocery-list" className="btn btn-fill-bottom btn-fill-bottom--green">grocery list</Link></li>
-            <li><Link to="/profile" className="btn btn-fill-bottom btn-fill-bottom--green">profile</Link></li>
-          </ul>
+            <SignedIn>
+              <ul className="nav_links">
+                  <li><Link to="/meal-plan" className="btn btn-fill-bottom btn-fill-bottom--green">meal plan</Link></li>
+                  <li><Link to="/grocery-list" className="btn btn-fill-bottom btn-fill-bottom--green">grocery list</Link></li>
+                  <li><Link to="/profile" className="btn btn-fill-bottom btn-fill-bottom--green">profile</Link></li>
+              </ul>
+            </SignedIn>
+            <SignedOut>
+              <ul className="nav_links">
+                <li>
+                  <SignInButton mode="modal" redirectUrl="/dashboard">
+                      <p className="btn btn-fill-bottom btn-fill-bottom--green"><Link>log in</Link></p>
+                  </SignInButton>
+                </li>
+              </ul>
+            </SignedOut>
         </div>
       </nav>
 
@@ -60,7 +71,7 @@ function App() {
               <li><h2>your meal planning solution!</h2></li>
               <SignedOut>
                 <SignInButton mode="modal" redirectUrl="/dashboard">
-                  <button className="button">log in</button>
+                  <button className="button">sign up</button>
                 </SignInButton>
               </SignedOut>
               <SignedIn>
