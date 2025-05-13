@@ -5,14 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="ab0f8018-c1ca-428e-91d3-dfb176ee8303" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../client/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/../client/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../client/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/../client/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/GroceryListTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/GroceryListTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/PantryCompareHandlerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/PantryCompareHandlerTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/PantryTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/PantryTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/RecipeHandlerTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/RecipeHandlerTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/SpoonacularServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/edu/brown/cs/student/SpoonacularServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/edu/brown/cs/student/main/server/handlers/AddGroceryIngredientHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/edu/brown/cs/student/main/server/handlers/AddGroceryIngredientHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/edu/brown/cs/student/main/server/handlers/AddRecipeToGroceryHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/edu/brown/cs/student/main/server/handlers/AddRecipeToGroceryHandler.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/edu/brown/cs/student/main/server/handlers/GroceryListHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/edu/brown/cs/student/main/server/handlers/GroceryListHandler.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -107,7 +103,9 @@
       <workItem from="1745594927026" duration="1138000" />
       <workItem from="1746282820653" duration="888000" />
       <workItem from="1746898969650" duration="115000" />
-      <workItem from="1746899108662" duration="845000" />
+      <workItem from="1746899108662" duration="2075000" />
+      <workItem from="1747149960373" duration="1608000" />
+      <workItem from="1747157975662" duration="1902000" />
     </task>
     <servers />
   </component>

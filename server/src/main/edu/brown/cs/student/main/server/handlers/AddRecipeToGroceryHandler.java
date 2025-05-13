@@ -81,7 +81,8 @@ public class AddRecipeToGroceryHandler implements Route {
 
       responseMap.put("result", "success");
       responseMap.put("message", "Recipe ingredients added to grocery list");
-      responseMap.put("groceryList", user.getGroceryList());
+      responseMap.put("missingIngredientsCount", missingIngredients.size());
+      responseMap.put("recipeTitle", recipe.getTitle());
 
     } catch (Exception e) {
       responseMap.put("result", "error_processing");

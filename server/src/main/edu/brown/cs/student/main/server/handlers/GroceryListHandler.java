@@ -3,17 +3,15 @@ package main.edu.brown.cs.student.main.server.handlers;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
-import main.edu.brown.cs.student.main.server.model.GroceryList;
 import main.edu.brown.cs.student.main.server.model.User;
+import main.edu.brown.cs.student.main.server.model.Ingredient;
 import main.edu.brown.cs.student.main.server.service.SpoonacularService;
 import spark.Request;
 import spark.Response;
 import spark.Route;
 
 import java.lang.reflect.Type;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class GroceryListHandler implements Route {
   private final SpoonacularService spoonacularService;
@@ -35,8 +33,9 @@ public class GroceryListHandler implements Route {
     response.type("application/json");
 
     try {
-      // Extract user ID from request path
+      // Get userId from path parameter
       String userId = request.params(":userId");
+
       if (userId == null) {
         responseMap.put("result", "error_bad_request");
         responseMap.put("message", "User ID is required");
@@ -46,24 +45,43 @@ public class GroceryListHandler implements Route {
 
       // Check if user exists
       if (!users.containsKey(userId)) {
-        // Create a new user if not exists
         users.put(userId, new User(userId, "", ""));
       }
 
-      // Get the user's grocery list
       User user = users.get(userId);
-      GroceryList groceryList = user.getGroceryList();
+
+      // Get the grocery list items (using getAllIngredients method from GroceryList)
+      List<Ingredient> groceryIngredients = user.getGroceryList().getAllIngredients();
+      List<Ingredient> checkedItems = user.getGroceryList().getCheckedItems();
+
+      // Convert to object format that includes checked status
+      List<Map<String, Object>> groceryItemsWithStatus = new ArrayList<>();
+      for (Ingredient ingredient : groceryIngredients) {
+        Map<String, Object> itemMap = new HashMap<>();
+
+        String itemString = ingredient.getOriginalString() != null
+            ? ingredient.getOriginalString()
+            : (ingredient.getAmount() != 0 ? ingredient.getAmount() + " " : "") +
+                (ingredient.getUnit() != null ? ingredient.getUnit() + " " : "") +
+                ingredient.getName();
+
+        itemMap.put("name", itemString);
+
+        // Check if this item is in the checked list
+        boolean isChecked = checkedItems.stream()
+            .anyMatch(checked -> checked.getName().equalsIgnoreCase(ingredient.getName()));
+        itemMap.put("checked", isChecked);
+
+        groceryItemsWithStatus.add(itemMap);
+      }
 
       responseMap.put("result", "success");
-      responseMap.put("groceryList", groceryList);
+      responseMap.put("groceries", groceryItemsWithStatus);
+      responseMap.put("count", groceryItemsWithStatus.size());
 
-    } catch (IllegalArgumentException e) {
-      responseMap.put("result", "error_bad_request");
-      responseMap.put("message", e.getMessage());
-      response.status(400);
     } catch (Exception e) {
-      responseMap.put("result", "error_datasource");
-      responseMap.put("message", "Failed to fetch grocery list: " + e.getMessage());
+      responseMap.put("result", "error_processing");
+      responseMap.put("message", "Failed to get grocery list: " + e.getMessage());
       response.status(500);
     }
 
