@@ -14,7 +14,7 @@ const cardStyle = {
   padding: "40px 32px",
   boxShadow: "0 4px 24px #b4e2c1",
   maxWidth: "420px",
-  margin: "100px auto",
+  margin: "300px auto",
   textAlign: "center" as const,
 };
 
@@ -72,30 +72,41 @@ const GroceryList: React.FC = () => {
   const [input, setInput] = useState<string>("");
   const [error, setError] = useState<string>("");
 
+  // General fetch function
+  const fetchFromAPI = async (url: string, method: string = "GET", body?: any) => {
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await response.json();
+      if (!response.ok || data.result !== "success") {
+        throw new Error(data.message || "Request failed");
+      }
+      return data;
+    } catch (error) {
+      setError(error.message);
+      console.error(error);
+      throw error;
+    }
+  };
+
   // Fetch grocery items for the current user
   const fetchGroceryItems = async () => {
     try {
       if (!userId) return;
-  
-      const response = await fetch(`http://localhost:8080/api/users/${userId}/grocery`);
-      const data = await response.json();
-  
-      if (data.result === "success") {
-        const items = data.groceries || [];
-        const formatted = items.map((item: any) => ({
-          name: item.name,
-          checked: item.checked ?? false,
-        }));
-        setGroceries(formatted);
-      } else {
-        throw new Error("Failed to load grocery items");
-      }
+      const data = await fetchFromAPI(`http://localhost:8080/api/users/${userId}/grocery`);
+      const formatted = (data.groceries || []).map((item: any) => ({
+        name: item.name,
+        checked: item.checked ?? false,
+      }));
+      setGroceries(formatted);
     } catch (error) {
-      console.error("Error fetching grocery items:", error);
       setError("Failed to load grocery list");
     }
   };
-  
+
   useEffect(() => {
     if (userId) {
       fetchGroceryItems();
@@ -112,13 +123,11 @@ const GroceryList: React.FC = () => {
   // Add new grocery item to the list
   const addGroceryItem = async (name: string) => {
     try {
-      await fetch("http://localhost:8080/api/grocery/add-ingredient", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, name }),
+      await fetchFromAPI("http://localhost:8080/api/grocery/add-ingredient", "POST", {
+        userId,
+        name,
       });
     } catch (error) {
-      console.error("Error adding grocery item:", error);
       setError("Failed to add item");
     }
   };
@@ -144,7 +153,6 @@ const GroceryList: React.FC = () => {
     if (!userId) return;
 
     const newCheckedStatus = !item.checked;
-
     setGroceries((prev) =>
       prev.map((grocery) =>
         grocery.name === item.name ? { ...grocery, checked: newCheckedStatus } : grocery
@@ -152,38 +160,34 @@ const GroceryList: React.FC = () => {
     );
 
     try {
-      const checkResponse = await fetch("http://localhost:8080/api/grocery/add-ingredient", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId,
-          ingredientName: item.name,
-          checked: newCheckedStatus,
-        }),
+      await fetchFromAPI("http://localhost:8080/api/grocery/add-ingredient", "POST", {
+        userId,
+        ingredientName: item.name,
+        checked: newCheckedStatus,
       });
 
-      const checkData = await checkResponse.json();
-      if (!checkResponse.ok || checkData.result !== "success") {
-        throw new Error("Failed to update grocery item");
-      }
-
       if (newCheckedStatus) {
-        const addToPantryResponse = await fetch("http://localhost:8080/api/pantry/add-ingredient", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ userId, name: item.name }),
+        // Add to pantry
+        await fetchFromAPI("http://localhost:8080/api/pantry/add-ingredient", "POST", {
+          userId,
+          name: item.name,
         });
 
-        const pantryData = await addToPantryResponse.json();
-        if (!addToPantryResponse.ok || pantryData.result !== "success") {
-          throw new Error("Failed to add item to pantry");
-        }
+        console.log(item.name)
+
+        // Remove from grocery
+        await fetchFromAPI("http://localhost:8080/api/grocery/delete-ingredient", "POST", {
+          userId,
+          ingredientName: item.name,
+      
+        });
 
         setGroceries((prev) => prev.filter((g) => g.name !== item.name));
       }
     } catch (error) {
       setError("Failed to move item to pantry");
       console.error("Error moving item to pantry:", error);
+      // Rollback the status change
       setGroceries((prev) =>
         prev.map((grocery) =>
           grocery.name === item.name ? { ...grocery, checked: !newCheckedStatus } : grocery
@@ -213,28 +217,27 @@ const GroceryList: React.FC = () => {
       </div>
       <ul style={listStyle}>
         {groceries.map((item, index) => (
-            <li key={`${item.name}-${index}`} style={itemStyle}>
-              <label style={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-                <input
-                  type="checkbox"
-                  checked={item.checked}
-                  onChange={() => toggleGroceryItem(item)}
-                  style={checkboxStyle}
-                />
-                <span
-                  style={{
-                    textDecoration: item.checked ? "line-through" : "none",
-                    color: item.checked ? "#8fb996" : "#3a5a40",
-                    fontSize: "1rem",
-                    marginLeft: "6px",
-                  }}
-                >
-                  {item.name}
-                </span>
-              </label>
-            </li>
-          ))}
-
+          <li key={`${item.name}-${index}`} style={itemStyle}>
+            <label style={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
+              <input
+                type="checkbox"
+                checked={item.checked}
+                onChange={() => toggleGroceryItem(item)}
+                style={checkboxStyle}
+              />
+              <span
+                style={{
+                  textDecoration: item.checked ? "line-through" : "none",
+                  color: item.checked ? "#8fb996" : "#3a5a40",
+                  fontSize: "1rem",
+                  marginLeft: "6px",
+                }}
+              >
+                {item.name}
+              </span>
+            </label>
+          </li>
+        ))}
       </ul>
       <div style={{ marginTop: "32px" }}>
         <SignOutButton>

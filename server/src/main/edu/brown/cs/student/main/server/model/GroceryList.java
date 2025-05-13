@@ -53,17 +53,25 @@ public class GroceryList {
     }
 
     // Remove an ingredient from the grocery list
-    public void removeIngredient(Ingredient ingredient) {
+    public boolean removeIngredient(Ingredient ingredient) {
         String aisle = ingredient.getAisle() != null ? ingredient.getAisle() : "Other";
 
         if (ingredientsByAisle.containsKey(aisle)) {
-            ingredientsByAisle.get(aisle).removeIf(i -> i.getName().equalsIgnoreCase(ingredient.getName()));
+            // Try to remove the ingredient by name
+            boolean removed = ingredientsByAisle.get(aisle)
+                .removeIf(i -> i.getName().equalsIgnoreCase(ingredient.getName()));
 
-            // Remove the aisle if it's empty
+            // Clean up if the aisle is now empty
+            System.out.println("aisle" + ingredientsByAisle);
+            System.out.println("dlete" + ingredient);
             if (ingredientsByAisle.get(aisle).isEmpty()) {
                 ingredientsByAisle.remove(aisle);
             }
+
+            return removed;
         }
+
+        return false;
     }
 
     // Mark an item as checked

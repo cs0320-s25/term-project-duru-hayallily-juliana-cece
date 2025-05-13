@@ -1,5 +1,6 @@
 /Users/cecebartin/Desktop/cs320/term-project-duru-hayallily-juliana-cece/server/src/main/edu/brown/cs/student/main/server/config/AppConfig.java
 /Users/cecebartin/Desktop/cs320/term-project-duru-hayallily-juliana-cece/server/src/main/edu/brown/cs/student/main/server/handlers/GroceryListHandler.java
+/Users/cecebartin/Desktop/cs320/term-project-duru-hayallily-juliana-cece/server/src/main/edu/brown/cs/student/main/server/handlers/DeleteGroceryIngredientHandler.java
 /Users/cecebartin/Desktop/cs320/term-project-duru-hayallily-juliana-cece/server/src/main/edu/brown/cs/student/main/server/model/Ingredient.java
 /Users/cecebartin/Desktop/cs320/term-project-duru-hayallily-juliana-cece/server/src/main/edu/brown/cs/student/main/server/handlers/PantryHandler.java
 /Users/cecebartin/Desktop/cs320/term-project-duru-hayallily-juliana-cece/server/src/main/edu/brown/cs/student/main/server/handlers/PantryCompareHandler.java

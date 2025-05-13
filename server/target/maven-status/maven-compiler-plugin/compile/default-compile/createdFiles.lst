@@ -8,6 +8,7 @@ main/edu/brown/cs/student/main/server/handlers/RemoveAllergenHandler.class
 main/edu/brown/cs/student/main/server/handlers/AllergenHandler.class
 main/edu/brown/cs/student/main/server/handlers/PantryCompareHandler.class
 main/edu/brown/cs/student/main/server/handlers/AddAllergenHandler.class
+main/edu/brown/cs/student/main/server/handlers/DeleteGroceryIngredientHandler.class
 main/edu/brown/cs/student/main/server/handlers/AddPantryIngredientHandler.class
 main/edu/brown/cs/student/main/server/handlers/GroceryListHandler.class
 main/edu/brown/cs/student/main/server/model/Ingredient.class
