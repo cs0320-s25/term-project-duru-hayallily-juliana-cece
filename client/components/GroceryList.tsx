@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { SignOutButton } from "@clerk/clerk-react";
-import { useUser } from "@clerk/clerk-react";
+import { SignOutButton, useUser } from "@clerk/clerk-react";
 
+// Define interface for GroceryItem
 interface GroceryItem {
   name: string;
   checked: boolean;
 }
 
+// Styles
 const cardStyle = {
   background: "#eafff0",
   borderRadius: "24px",
   padding: "40px 32px",
   boxShadow: "0 4px 24px #b4e2c1",
   maxWidth: "420px",
-  margin: "300px auto",
-  textAlign: "center",
+  margin: "100px auto",
+  textAlign: "center" as const,
 };
 
 const inputStyle = {
@@ -23,6 +24,7 @@ const inputStyle = {
   border: "1px solid #b4e2c1",
   marginRight: "8px",
   fontSize: "1rem",
+  flexGrow: 1,
 };
 
 const buttonStyle = {
@@ -32,7 +34,7 @@ const buttonStyle = {
   padding: "10px 20px",
   borderRadius: "8px",
   cursor: "pointer",
-  fontWeight: "bold",
+  fontWeight: "bold" as const,
   fontSize: "1rem",
   marginLeft: "4px",
   marginTop: "8px",
@@ -42,7 +44,7 @@ const listStyle = {
   listStyle: "none",
   padding: 0,
   marginTop: "24px",
-  textAlign: "left",
+  textAlign: "left" as const,
 };
 
 const itemStyle = {
@@ -54,310 +56,186 @@ const itemStyle = {
   alignItems: "center",
   justifyContent: "space-between",
   boxShadow: "0 2px 8px #b4e2c133",
-  cursor: "pointer",
-  transition: "all 0.2s ease",
-};
-
-const checkedItemStyle = {
-  ...itemStyle,
-  background: "#f0f8f0",
-  opacity: 0.7,
 };
 
 const checkboxStyle = {
   width: "20px",
   height: "20px",
-  marginRight: "10px",
-  cursor: "pointer",
+  accentColor: "#8fb996",
+  marginRight: "12px",
 };
 
 const GroceryList: React.FC = () => {
   const { user } = useUser();
+  const userId = user?.id;
   const [groceries, setGroceries] = useState<GroceryItem[]>([]);
   const [input, setInput] = useState<string>("");
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string>("");
 
-  const userId = user?.id;
-
-  // Fetch grocery items from Java backend
+  // Fetch grocery items for the current user
   const fetchGroceryItems = async () => {
-    if (!userId) return;
-
-    setIsLoading(true);
-    setError("");
-
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/users/${userId}/grocery`
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch grocery items: ${response.status}`);
-      }
-
+      if (!userId) return;
+  
+      const response = await fetch(`http://localhost:8080/api/users/${userId}/grocery`);
       const data = await response.json();
-
+  
       if (data.result === "success") {
-        setGroceries(data.groceries || []);
+        const items = data.groceries || [];
+        const formatted = items.map((item: any) => ({
+          name: item.name,
+          checked: item.checked ?? false,
+        }));
+        setGroceries(formatted);
       } else {
-        throw new Error(data.message || "Failed to fetch grocery items");
+        throw new Error("Failed to load grocery items");
       }
     } catch (error) {
       console.error("Error fetching grocery items:", error);
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
+      setError("Failed to load grocery list");
     }
   };
-
-  // Add new grocery item via backend
-  const addGroceryItem = async (item: string) => {
-    if (!userId) return;
-
-    try {
-      const response = await fetch(
-        `http://localhost:8080/api/grocery/add-ingredient`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: userId,
-            ingredientName: item,
-          }),
+  
+  useEffect(() => {
+    if (userId) {
+      fetchGroceryItems();
+      const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === "grocery-update") {
+          fetchGroceryItems();
         }
-      );
+      };
+      window.addEventListener("storage", handleStorageChange);
+      return () => window.removeEventListener("storage", handleStorageChange);
+    }
+  }, [userId]);
 
-      if (!response.ok) {
-        throw new Error(`Failed to add grocery item: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.result === "success") {
-        // Refresh the grocery list
-        fetchGroceryItems();
-      } else {
-        throw new Error(data.message || "Failed to add grocery item");
-      }
+  // Add new grocery item to the list
+  const addGroceryItem = async (name: string) => {
+    try {
+      await fetch("http://localhost:8080/api/grocery/add-ingredient", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, name }),
+      });
     } catch (error) {
       console.error("Error adding grocery item:", error);
-      setError(error.message);
+      setError("Failed to add item");
     }
   };
 
-  // Check/uncheck a grocery item
+  // Handle adding a new item from the input field
+  const handleAdd = async () => {
+    const trimmed = input.trim();
+    if (!trimmed || groceries.some((item) => item.name === trimmed)) return;
+
+    const newGrocery = { name: trimmed, checked: false };
+    setGroceries([...groceries, newGrocery]);
+    setInput("");
+    await addGroceryItem(trimmed);
+  };
+
+  // Handle Enter key press for adding a new item
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleAdd();
+  };
+
+  // Toggle checked status for grocery items
   const toggleGroceryItem = async (item: GroceryItem) => {
     if (!userId) return;
 
-    // Optimistically update UI
     const newCheckedStatus = !item.checked;
-    setGroceries(
-      groceries.map((grocery) =>
-        grocery.name === item.name
-          ? { ...grocery, checked: newCheckedStatus }
-          : grocery
+
+    setGroceries((prev) =>
+      prev.map((grocery) =>
+        grocery.name === item.name ? { ...grocery, checked: newCheckedStatus } : grocery
       )
     );
 
     try {
-      const response = await fetch(
-        `http://localhost:8080/api/grocery/check-item`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: userId,
-            ingredientName: item.name,
-            checked: newCheckedStatus,
-          }),
-        }
-      );
+      const checkResponse = await fetch("http://localhost:8080/api/grocery/add-ingredient", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId,
+          ingredientName: item.name,
+          checked: newCheckedStatus,
+        }),
+      });
 
-      if (!response.ok) {
-        throw new Error(`Failed to update grocery item: ${response.status}`);
+      const checkData = await checkResponse.json();
+      if (!checkResponse.ok || checkData.result !== "success") {
+        throw new Error("Failed to update grocery item");
       }
 
-      const data = await response.json();
+      if (newCheckedStatus) {
+        const addToPantryResponse = await fetch("http://localhost:8080/api/pantry/add-ingredient", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId, name: item.name }),
+        });
 
-      if (data.result !== "success") {
-        // Revert optimistic update if backend fails
-        setGroceries(
-          groceries.map((grocery) =>
-            grocery.name === item.name
-              ? { ...grocery, checked: item.checked }
-              : grocery
-          )
-        );
-        throw new Error(data.message || "Failed to update grocery item");
+        const pantryData = await addToPantryResponse.json();
+        if (!addToPantryResponse.ok || pantryData.result !== "success") {
+          throw new Error("Failed to add item to pantry");
+        }
+
+        setGroceries((prev) => prev.filter((g) => g.name !== item.name));
       }
     } catch (error) {
-      console.error("Error updating grocery item:", error);
-      setError(error.message);
-      // Revert optimistic update
-      setGroceries(
-        groceries.map((grocery) =>
-          grocery.name === item.name
-            ? { ...grocery, checked: item.checked }
-            : grocery
+      setError("Failed to move item to pantry");
+      console.error("Error moving item to pantry:", error);
+      setGroceries((prev) =>
+        prev.map((grocery) =>
+          grocery.name === item.name ? { ...grocery, checked: !newCheckedStatus } : grocery
         )
       );
     }
   };
 
-  // Clear all grocery items
-  const handleClear = async () => {
-    if (!userId) return;
-
-    try {
-      // Note: You might need to create a clear endpoint in your backend
-      // For now, let's just refresh the list
-      // await fetch(`http://localhost:8080/api/users/${userId}/grocery/clear`, { method: 'DELETE' });
-      setGroceries([]);
-    } catch (error) {
-      console.error("Error clearing grocery items:", error);
-      setError(error.message);
-    }
-  };
-
-  useEffect(() => {
-    if (userId) {
-      fetchGroceryItems();
-    }
-  }, [userId]);
-
-  const handleAdd = async () => {
-    const trimmed = input.trim();
-    if (!trimmed || groceries.some((item) => item.name === trimmed)) return;
-
-    // Optimistically update UI
-    setGroceries([...groceries, { name: trimmed, checked: false }]);
-    setInput("");
-
-    // Add to backend
-    await addGroceryItem(trimmed);
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") handleAdd();
-  };
-
-  // Sort groceries: unchecked items first, then checked items
-  const sortedGroceries = [...groceries].sort((a, b) => {
-    if (a.checked === b.checked) return 0;
-    return a.checked ? 1 : -1;
-  });
-
-  const checkedCount = groceries.filter((item) => item.checked).length;
-
   return (
     <div style={cardStyle}>
-      <h1 style={{ color: "#3a5a40" }}>🛒 your grocery list</h1>
-
-      {error && (
-        <div style={{ color: "red", fontSize: "0.8rem", marginBottom: "16px" }}>
-          {error}
-        </div>
-      )}
-
-      <div>
+      <h2 style={{ color: "#3a5a40", fontWeight: "bold", fontSize: "2rem", marginBottom: "12px" }}>
+        🛒 Grocery List
+      </h2>
+      {error && <p style={{ color: "#a23e3e", marginBottom: "12px", fontSize: "0.95rem" }}>{error}</p>}
+      <div style={{ display: "flex", gap: "8px", marginBottom: "18px" }}>
         <input
           type="text"
-          placeholder="add a grocery item..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleInputKeyDown}
+          placeholder="Add an item..."
           style={inputStyle}
-          disabled={isLoading}
         />
-        <button onClick={handleAdd} style={buttonStyle} disabled={isLoading}>
-          {isLoading ? "Adding..." : "Add"}
-        </button>
-        <button
-          onClick={handleClear}
-          style={{
-            ...buttonStyle,
-            marginLeft: "12px",
-            background: "#ffb4b4",
-            color: "#a23e3e",
-          }}
-        >
-          Clear All
+        <button onClick={handleAdd} style={buttonStyle}>
+          Add
         </button>
       </div>
-
-      {/* Show progress */}
-      {groceries.length > 0 && (
-        <div
-          style={{
-            marginTop: "16px",
-            fontSize: "0.9rem",
-            color: "#8fb996",
-            textAlign: "center",
-          }}
-        >
-          {checkedCount} of {groceries.length} items checked
-        </div>
-      )}
-
       <ul style={listStyle}>
-        {isLoading ? (
-          <li style={{ color: "#8fb996", marginTop: "16px" }}>
-            Loading grocery items...
-          </li>
-        ) : groceries.length === 0 ? (
-          <li style={{ color: "#8fb996", marginTop: "16px" }}>
-            (nothing to buy!)
-          </li>
-        ) : (
-          sortedGroceries.map((item, index) => (
-            <li
-              key={`${item.name}-${index}`}
-              style={item.checked ? checkedItemStyle : itemStyle}
-              onClick={() => toggleGroceryItem(item)}
-            >
-              <div style={{ display: "flex", alignItems: "center" }}>
+        {groceries.map((item, index) => (
+            <li key={`${item.name}-${index}`} style={itemStyle}>
+              <label style={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
                 <input
                   type="checkbox"
                   checked={item.checked}
                   onChange={() => toggleGroceryItem(item)}
                   style={checkboxStyle}
-                  onClick={(e) => e.stopPropagation()} // Prevent double toggle
                 />
                 <span
                   style={{
                     textDecoration: item.checked ? "line-through" : "none",
-                    color: item.checked ? "#888" : "inherit",
+                    color: item.checked ? "#8fb996" : "#3a5a40",
+                    fontSize: "1rem",
+                    marginLeft: "6px",
                   }}
                 >
-                  <span
-                    role="img"
-                    aria-label="grocery"
-                    style={{ marginRight: 8 }}
-                  >
-                    🥕
-                  </span>
                   {item.name}
                 </span>
-              </div>
-              {item.checked && (
-                <span
-                  role="img"
-                  aria-label="checked"
-                  style={{ color: "#4CAF50" }}
-                >
-                  ✓
-                </span>
-              )}
+              </label>
             </li>
-          ))
-        )}
-      </ul>
+          ))}
 
+      </ul>
       <div style={{ marginTop: "32px" }}>
         <SignOutButton>
           <button
@@ -368,7 +246,7 @@ const GroceryList: React.FC = () => {
               marginLeft: 0,
             }}
           >
-            Log Out
+            Sign Out
           </button>
         </SignOutButton>
       </div>

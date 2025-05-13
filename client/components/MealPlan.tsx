@@ -1,3 +1,5 @@
+
+
 import React, { useState, useEffect } from "react";
 import { SignOutButton } from "@clerk/clerk-react";
 import {
@@ -157,45 +159,54 @@ const MealPlan: React.FC = () => {
   };
 
   // Function to add recipe ingredients to grocery list
-  const addRecipeToGroceryList = async (recipeId: number) => {
-    if (!userId) return;
+const addRecipeToGroceryList = async (recipeId: number) => {
+  if (!userId) return;
 
-    try {
-      console.log(
-        `Adding recipe ${recipeId} to grocery list for user ${userId}`
-      ); // Debug log
+  try {
+    console.log(
+      `Adding recipe ${recipeId} to grocery list for user ${userId}`
+    ); // Debug log
 
-      const response = await fetch(
-        `http://localhost:8080/api/grocery/add-recipe`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userId: userId,
-            recipeId: recipeId,
-          }),
-        }
+    const response = await fetch(
+      `http://localhost:8080/api/grocery/add-recipe`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userId,
+          recipeId: recipeId,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to add recipe to grocery list: ${response.status}`
       );
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to add recipe to grocery list: ${response.status}`
-        );
-      }
-
-      const result = await response.json();
-      console.log("Add to grocery list result:", result); // Debug log
-
-      if (result.result === "success") {
-        console.log("Recipe ingredients added to grocery list successfully");
-      }
-    } catch (error) {
-      console.error("Error adding recipe to grocery list:", error);
-      setSearchError(`Error adding to grocery list: ${error.message}`);
     }
-  };
+
+    // 🚨 Fix here — get raw text and parse it manually
+    const rawText = await response.text();
+    const result = JSON.parse(rawText);
+    console.log("Add to grocery list result:", result); // Debug log
+
+    if (result.result === "success") {
+      // Trigger grocery list refresh
+      localStorage.setItem("grocery-update", Date.now().toString());
+
+      // Optional UI message reset
+      setTimeout(() => {
+        // setSuccessMessage("");
+      }, 3000);
+    }
+  } catch (error: any) {
+    console.error("Error adding recipe to grocery list:", error);
+    setSearchError(`Error adding to grocery list: ${error.message}`);
+  }
+};
+
 
   // Function to handle adding a recipe to meal plan
   const handleAddRecipe = async (recipe: Recipe) => {
@@ -231,11 +242,44 @@ const MealPlan: React.FC = () => {
   };
 
   const handleClear = async () => {
-    if (userId) {
-      await clearMealPlanItems(userId);
-      setMealPlans([]);
+  if (userId) {
+    // Clear meal plan items
+    await clearMealPlanItems(userId);
+    setMealPlans([]);
+
+    // Clear grocery list as well
+    await clearGroceryList(userId);  // New function for clearing grocery list
+  }
+};
+
+// Function to clear grocery list
+const clearGroceryList = async (userId: string) => {
+  try {
+    const response = await fetch(
+      `http://localhost:8080/api/grocery/clear`,  // Adjust the endpoint as needed
+      
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: userId,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to clear grocery list");
     }
-  };
+
+    // Optionally update the UI or trigger any additional effects
+    console.log("Grocery list cleared successfully");
+    localStorage.setItem("grocery-update", Date.now().toString());  // Optional refresh trigger
+  } catch (error) {
+    console.error("Error clearing grocery list:", error);
+  }
+};
 
   return (
     <div style={cardStyle}>
@@ -387,3 +431,4 @@ const MealPlan: React.FC = () => {
 };
 
 export default MealPlan;
+

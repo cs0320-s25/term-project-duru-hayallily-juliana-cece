@@ -61,23 +61,40 @@ const removeButtonStyle = {
   marginLeft: "10px",
 };
 
-const pantryEmojiSuggestions = ["🍝", "🍞", "🥛", "🍯", "🍏", "🍅", "🥚", "🧀", "🥦", "🍗"];
-
 const Dashboard: React.FC = () => {
   const { user } = useUser();
   const userId = user?.id;
 
-  const [pantryItems, setPantryItems] = useState<{ name: string; emoji: string }[]>([]);
+  const [pantryItems, setPantryItems] = useState<{ name: string }[]>([]);
   const [input, setInput] = useState("");
-  const [emoji, setEmoji] = useState("🍝");
 
   useEffect(() => {
+    // Fetch pantry items
     const fetchPantry = async () => {
       if (!userId) return;
-      const items = await getPantryItems(userId);
-      setPantryItems(items);
+      try {
+        const response = await fetch(`http://localhost:8080/api/users/${userId}/pantry`);
+        const data = await response.json();
+  
+        if (data.result === "success") {
+          const pantry = data.pantry || {};
+          
+          // Flatten the ingredientsByCategory into a single array
+          const items = Object.values(pantry.ingredientsByCategory)
+            .flat() // Flatten all categories into one array
+            .map((item: any) => ({
+              name: item.name,
+            }));
+  
+          setPantryItems(items);
+        } else {
+          throw new Error("Failed to load pantry items");
+        }
+      } catch (error) {
+        console.error("Error fetching pantry items:", error);
+      }
     };
-
+  
     fetchPantry();
   }, [userId]);
 
@@ -86,11 +103,10 @@ const Dashboard: React.FC = () => {
     if (!trimmed || !userId) return;
     if (pantryItems.some(item => item.name.toLowerCase() === trimmed.toLowerCase())) return;
 
-    const newItem = { name: trimmed, emoji };
+    const newItem = { name: trimmed };
     await addPantryItem(userId, newItem);  
     setPantryItems([...pantryItems, newItem]);
     setInput("");
-    setEmoji(pantryEmojiSuggestions[0]);
   };
 
   const handleRemove = async (name: string) => {
@@ -121,7 +137,6 @@ const Dashboard: React.FC = () => {
         )}
         {pantryItems.map(item => (
           <span key={item.name} style={jarStyle} title={item.name}>
-            <span style={{ marginRight: 4 }}>{item.emoji}</span>
             <span style={{ fontSize: "1rem", color: "#b48a54" }}>{item.name}</span>
             <button
               onClick={() => handleRemove(item.name)} 
@@ -142,21 +157,6 @@ const Dashboard: React.FC = () => {
           onKeyDown={handleInputKeyDown}
           style={inputStyle}
         />
-        <select
-          value={emoji}
-          onChange={e => setEmoji(e.target.value)}
-          style={{
-            ...inputStyle,
-            width: "52px",
-            padding: "10px 12px",
-            fontSize: "1.3rem",
-            marginRight: "10px",
-          }}
-        >
-          {pantryEmojiSuggestions.map(e => (
-            <option key={e} value={e}>{e}</option>
-          ))}
-        </select>
         <button onClick={handleAdd} style={addButtonStyle}>
           Add
         </button>

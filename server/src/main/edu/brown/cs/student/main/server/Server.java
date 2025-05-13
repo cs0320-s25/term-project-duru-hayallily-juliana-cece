@@ -6,7 +6,8 @@ import main.edu.brown.cs.student.main.server.handlers.AddGroceryIngredientHandle
 import main.edu.brown.cs.student.main.server.handlers.AddPantryIngredientHandler;
 import main.edu.brown.cs.student.main.server.handlers.AddRecipeToGroceryHandler;
 import main.edu.brown.cs.student.main.server.handlers.AllergenHandler;
-import main.edu.brown.cs.student.main.server.handlers.CheckGroceryItemHandler;
+// import main.edu.brown.cs.student.main.server.handlers.CheckGroceryItemHandler;
+import main.edu.brown.cs.student.main.server.handlers.ClearGroceryListHandler; 
 import main.edu.brown.cs.student.main.server.handlers.GroceryListHandler;
 import main.edu.brown.cs.student.main.server.handlers.PantryCompareHandler;
 import main.edu.brown.cs.student.main.server.handlers.PantryHandler;
@@ -67,7 +68,8 @@ public class Server {
     get("/api/users/:userId/grocery", new GroceryListHandler(spoonacularService, users));
     post("/api/grocery/add-recipe", new AddRecipeToGroceryHandler(spoonacularService, users));
     post("/api/grocery/add-ingredient", new AddGroceryIngredientHandler(users));
-    post("/api/grocery/check-item", new CheckGroceryItemHandler(users));
+    post("/api/grocery/clear", new ClearGroceryListHandler(users));
+    // post("/api/grocery/check-item", new CheckGroceryItemHandler(users));
 
 
     // Pantry routes
