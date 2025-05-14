@@ -42,12 +42,12 @@ test.describe("Frontend", () => {
     
     await textbox.fill("oatmeal");
 
-    await addButton.click;
+    await addButton.click();
 
     await expect(page.getByText("oatmeal")).toBeVisible();
   });
 
-  test("recipies", async ({ page }) => {
+  test("recipes", async ({ page }) => {
     const signin = page.getByLabel("sign in");
     
     await clerk.signIn({page,
@@ -59,14 +59,14 @@ test.describe("Frontend", () => {
 
     await page.goto("http://localhost:5173/meal-plan"); 
 
-    const textbox = page.getByLabel("recipie input");
+    const textbox = page.getByLabel("recipe input");
     const clearButton = page.getByText("clear all");
     
     await textbox.fill("ostrich egg");
     await expect(page.getByText("No recipes found for \"ostrich egg\"")).toBeVisible();
 
     await textbox.fill("egg");
-    await expect(page.getByText("Recipie Results")).toBeVisible();
+    await expect(page.getByText("Recipe Results")).toBeVisible();
 
     await textbox.fill("");
     await clearButton.click();
