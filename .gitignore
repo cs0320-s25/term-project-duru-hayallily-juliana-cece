@@ -18,5 +18,11 @@ test-results/
 playwright-report/
 playwright/.cache/
 
+
 # mac
 .DS_Store
+
+term-project-duru-hayallily-juliana-cece/
+server/
+resources/
+cs320finalproject-firebase-adminsdk-fbsvc-15fbf9cbf8.json
