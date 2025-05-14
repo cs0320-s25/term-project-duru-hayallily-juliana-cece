@@ -41,24 +41,58 @@ function App() {
       <nav>
         <div className="nav_content">
           <div className="logo">
-            <h1><Link to="/">groceryly</Link></h1>
+            <h1>
+              <Link to="/">groceryly</Link>
+            </h1>
           </div>
-            <SignedIn>
-              <ul className="nav_links">
-                  <li><Link to="/meal-plan" className="btn btn-fill-bottom btn-fill-bottom--green">meal plan</Link></li>
-                  <li><Link to="/grocery-list" className="btn btn-fill-bottom btn-fill-bottom--green">grocery list</Link></li>
-                  <li><Link to="/profile" className="btn btn-fill-bottom btn-fill-bottom--green">profile</Link></li>
-              </ul>
-            </SignedIn>
-            <SignedOut>
-              <ul className="nav_links">
-                <li>
-                  <SignInButton mode="modal" redirectUrl="/dashboard">
-                      <p className="btn btn-fill-bottom btn-fill-bottom--green"><Link>log in</Link></p>
-                  </SignInButton>
-                </li>
-              </ul>
-            </SignedOut>
+          <SignedIn>
+            <ul className="nav_links">
+              <li>
+                <Link
+                  to="/"
+                  className="btn btn-fill-bottom btn-fill-bottom--green"
+                >
+                  pantry
+                </Link>
+              </li>
+
+              <li>
+                <Link
+                  to="/meal-plan"
+                  className="btn btn-fill-bottom btn-fill-bottom--green"
+                >
+                  recipes
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/grocery-list"
+                  className="btn btn-fill-bottom btn-fill-bottom--green"
+                >
+                  grocery list
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/profile"
+                  className="btn btn-fill-bottom btn-fill-bottom--green"
+                >
+                  profile
+                </Link>
+              </li>
+            </ul>
+          </SignedIn>
+          <SignedOut>
+            <ul className="nav_links">
+              <li>
+                <SignInButton mode="modal" redirectUrl="/dashboard">
+                  <p className="btn btn-fill-bottom btn-fill-bottom--green">
+                    <Link>log in</Link>
+                  </p>
+                </SignInButton>
+              </li>
+            </ul>
+          </SignedOut>
         </div>
       </nav>
 
@@ -67,8 +101,12 @@ function App() {
         <div className="splash">
           <div className="splash-header">
             <ul>
-              <li><h1 aria-label="splash-header">groceryly</h1></li>
-              <li><h2>your meal planning solution!</h2></li>
+              <li>
+                <h1 aria-label="splash-header">groceryly</h1>
+              </li>
+              <li>
+                <h2>your meal planning solution!</h2>
+              </li>
               <SignedOut>
                 <SignInButton mode="modal" redirectUrl="/dashboard">
                   <button className="button">sign up</button>
@@ -85,10 +123,38 @@ function App() {
 
       <Routes>
         <Route path="/" element={<div>Welcome! Please log in.</div>} />
-        <Route path="/dashboard" element={<SignedIn><Dashboard /></SignedIn>} />
-        <Route path="/meal-plan" element={<SignedIn><MealPlan /></SignedIn>} />
-        <Route path="/grocery-list" element={<SignedIn><GroceryList /></SignedIn>} />
-        <Route path="/profile" element={<SignedIn><Profile /></SignedIn>} />
+        <Route
+          path="/dashboard"
+          element={
+            <SignedIn>
+              <Dashboard />
+            </SignedIn>
+          }
+        />
+        <Route
+          path="/meal-plan"
+          element={
+            <SignedIn>
+              <MealPlan />
+            </SignedIn>
+          }
+        />
+        <Route
+          path="/grocery-list"
+          element={
+            <SignedIn>
+              <GroceryList />
+            </SignedIn>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <SignedIn>
+              <Profile />
+            </SignedIn>
+          }
+        />
       </Routes>
     </div>
   );

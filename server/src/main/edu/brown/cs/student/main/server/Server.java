@@ -6,7 +6,7 @@ import main.edu.brown.cs.student.main.server.handlers.AddGroceryIngredientHandle
 import main.edu.brown.cs.student.main.server.handlers.AddPantryIngredientHandler;
 import main.edu.brown.cs.student.main.server.handlers.AddRecipeToGroceryHandler;
 import main.edu.brown.cs.student.main.server.handlers.AllergenHandler;
-// import main.edu.brown.cs.student.main.server.handlers.CheckGroceryItemHandler;
+import main.edu.brown.cs.student.main.server.handlers.CheckGroceryItemHandler;
 import main.edu.brown.cs.student.main.server.handlers.DeleteGroceryIngredientHandler; 
 import main.edu.brown.cs.student.main.server.handlers.ClearGroceryListHandler; 
 import main.edu.brown.cs.student.main.server.handlers.GroceryListHandler;
@@ -17,7 +17,8 @@ import main.edu.brown.cs.student.main.server.handlers.RecipeHandler;
 import main.edu.brown.cs.student.main.server.handlers.RemoveAllergenHandler;
 import main.edu.brown.cs.student.main.server.model.User;
 import main.edu.brown.cs.student.main.server.service.SpoonacularService;
-
+import main.edu.brown.cs.student.main.server.handlers.RemovePantryIngredientHandler;
+import main.edu.brown.cs.student.main.server.handlers.ClearPantryHandler;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -72,13 +73,15 @@ public class Server {
     post("/api/grocery/clear", new ClearGroceryListHandler(users));
     post("/api/grocery/delete-ingredient", new DeleteGroceryIngredientHandler(users));
     
-    // post("/api/grocery/check-item", new CheckGroceryItemHandler(users));
+     post("/api/grocery/check-item", new CheckGroceryItemHandler(users));
 
 
     // Pantry routes
     get("/api/users/:userId/pantry", new PantryHandler(spoonacularService, users));
     post("/api/pantry/add-ingredient", new AddPantryIngredientHandler(users));
     get("/api/pantry/compare", new PantryCompareHandler(spoonacularService, users));
+    delete("/api/pantry/remove-ingredient", new RemovePantryIngredientHandler(users));
+    delete("/api/pantry/clear", new ClearPantryHandler(users));
 
     // Allergen routes
     get("/api/allergens", new AllergenHandler(spoonacularService, users));

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { SignOutButton, useUser } from "@clerk/clerk-react";
-import { addPantryItem, getPantryItems, clearPantryItems, removePantryItem } from "../utils/firebaseUtils"; 
 
 const shelfStyle = {
   display: "flex",
@@ -61,68 +60,171 @@ const removeButtonStyle = {
   marginLeft: "10px",
 };
 
+interface PantryItem {
+  name: string;
+}
+
 const Dashboard: React.FC = () => {
   const { user } = useUser();
   const userId = user?.id;
 
-  const [pantryItems, setPantryItems] = useState<{ name: string }[]>([]);
+  const [pantryItems, setPantryItems] = useState<PantryItem[]>([]);
   const [input, setInput] = useState("");
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  // General fetch function for API calls
+  const fetchFromAPI = async (
+    url: string,
+    method: string = "GET",
+    body?: any
+  ) => {
+    try {
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      const data = await response.json();
+      if (!response.ok || data.result !== "success") {
+        throw new Error(data.message || "Request failed");
+      }
+      return data;
+    } catch (error) {
+      setError(error.message);
+      console.error(error);
+      throw error;
+    }
+  };
+
+  // Fetch pantry items from Java backend
+  const fetchPantryItems = async () => {
+    if (!userId) return;
+
+    setIsLoading(true);
+    try {
+      setError("");
+      const data = await fetchFromAPI(
+        `http://localhost:8080/api/users/${userId}/pantry`
+      );
+
+      if (data.pantry) {
+        // Extract all ingredients from all categories
+        const allItems: PantryItem[] = [];
+
+        if (data.pantry.ingredientsByCategory) {
+          Object.values(data.pantry.ingredientsByCategory).forEach(
+            (categoryItems: any) => {
+              if (Array.isArray(categoryItems)) {
+                categoryItems.forEach((item: any) => {
+                  allItems.push({ name: item.name });
+                });
+              }
+            }
+          );
+        }
+
+        setPantryItems(allItems);
+      }
+    } catch (error) {
+      setError("Failed to load pantry items");
+      console.error("Error fetching pantry items:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch pantry items
-    const fetchPantry = async () => {
-      if (!userId) return;
-      try {
-        const response = await fetch(`http://localhost:8080/api/users/${userId}/pantry`);
-        const data = await response.json();
-  
-        if (data.result === "success") {
-          const pantry = data.pantry || {};
-          
-          // Flatten the ingredientsByCategory into a single array
-          const items = Object.values(pantry.ingredientsByCategory)
-            .flat() // Flatten all categories into one array
-            .map((item: any) => ({
-              name: item.name,
-            }));
-  
-          setPantryItems(items);
-        } else {
-          throw new Error("Failed to load pantry items");
+    if (userId) {
+      fetchPantryItems();
+
+      // Listen for storage events (for cross-tab updates)
+      const handleStorageChange = (event: StorageEvent) => {
+        if (event.key === "pantry-update") {
+          fetchPantryItems();
         }
-      } catch (error) {
-        console.error("Error fetching pantry items:", error);
-      }
-    };
-  
-    fetchPantry();
+      };
+      window.addEventListener("storage", handleStorageChange);
+      return () => window.removeEventListener("storage", handleStorageChange);
+    }
   }, [userId]);
 
+  // Add item to pantry
   const handleAdd = async () => {
     const trimmed = input.trim();
     if (!trimmed || !userId) return;
-    if (pantryItems.some(item => item.name.toLowerCase() === trimmed.toLowerCase())) return;
+    if (
+      pantryItems.some(
+        (item) => item.name.toLowerCase() === trimmed.toLowerCase()
+      )
+    )
+      return;
 
+    // Optimistically update UI
     const newItem = { name: trimmed };
-    await addPantryItem(userId, newItem);  
     setPantryItems([...pantryItems, newItem]);
     setInput("");
+
+    try {
+      await fetchFromAPI(
+        "http://localhost:8080/api/pantry/add-ingredient",
+        "POST",
+        {
+          userId,
+          ingredientName: trimmed,
+        }
+      );
+    } catch (error) {
+      // Revert optimistic update on error
+      setPantryItems(pantryItems.filter((item) => item.name !== trimmed));
+      setError("Failed to add item to pantry");
+    }
   };
 
+  // Remove item from pantry
   const handleRemove = async (name: string) => {
     if (!userId) return;
-    await removePantryItem(userId, name);  
-    setPantryItems(pantryItems.filter(item => item.name !== name)); 
+
+    // Optimistically update UI
+    setPantryItems(pantryItems.filter((item) => item.name !== name));
+
+    try {
+      await fetchFromAPI(
+        "http://localhost:8080/api/pantry/remove-ingredient",
+        "DELETE",
+        {
+          userId,
+          ingredientName: name,
+        }
+      );
+    } catch (error) {
+      // Revert optimistic update on error
+      setPantryItems([...pantryItems, { name }]);
+      setError("Failed to remove item from pantry");
+    }
+  };
+
+  // Clear all pantry items
+  const handleClear = async () => {
+    if (!userId) return;
+
+    // Optimistically update UI
+    const currentItems = [...pantryItems];
+    setPantryItems([]);
+
+    try {
+      await fetchFromAPI("http://localhost:8080/api/pantry/clear", "DELETE", {
+        userId,
+      });
+    } catch (error) {
+      // Revert optimistic update on error
+      setPantryItems(currentItems);
+      setError("Failed to clear pantry");
+    }
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") handleAdd();
-  };
-
-  const handleClear = async () => {
-    if (!userId) return;
-    await clearPantryItems(userId);  
-    setPantryItems([]);
   };
 
   return (
@@ -130,37 +232,64 @@ const Dashboard: React.FC = () => {
       <h1 style={{ color: "#b48a54" }}>
         🧺 Welcome to your pantry, {user?.firstName || "!"}
       </h1>
+
+      {error && (
+        <p
+          style={{
+            color: "#a23e3e",
+            marginBottom: "12px",
+            fontSize: "0.95rem",
+          }}
+        >
+          {error}
+        </p>
+      )}
+
       <p style={{ color: "#b48a54" }}>Here are your pantry items:</p>
+
       <div style={shelfStyle}>
-        {pantryItems.length === 0 && (
+        {isLoading ? (
+          <span style={{ color: "#e0c3a5" }}>Loading pantry items...</span>
+        ) : pantryItems.length === 0 ? (
           <span style={{ color: "#e0c3a5" }}>(Your pantry is empty!)</span>
-        )}
-        {pantryItems.map(item => (
-          <span key={item.name} style={jarStyle} title={item.name}>
-            <span style={{ fontSize: "1rem", color: "#b48a54" }}>{item.name}</span>
-            <button
-              onClick={() => handleRemove(item.name)} 
-              style={removeButtonStyle}
-              title={`Remove ${item.name}`}
+        ) : (
+          pantryItems.map((item, index) => (
+            <span
+              key={`${item.name}-${index}`}
+              style={jarStyle}
+              title={item.name}
             >
-              ×
-            </button>
-          </span>
-        ))}
+              <span style={{ fontSize: "1rem", color: "#b48a54" }}>
+                {item.name}
+              </span>
+              <button
+                onClick={() => handleRemove(item.name)}
+                style={removeButtonStyle}
+                title={`Remove ${item.name}`}
+                disabled={isLoading}
+              >
+                ×
+              </button>
+            </span>
+          ))
+        )}
       </div>
+
       <div style={{ margin: "24px 0 0 0" }}>
         <input
           type="text"
           placeholder="Add pantry item..."
           value={input}
-          onChange={e => setInput(e.target.value)}
+          onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleInputKeyDown}
           style={inputStyle}
+          disabled={isLoading}
         />
-        <button onClick={handleAdd} style={addButtonStyle}>
-          Add
+        <button onClick={handleAdd} style={addButtonStyle} disabled={isLoading}>
+          {isLoading ? "Adding..." : "Add"}
         </button>
       </div>
+
       <div style={{ marginTop: "32px" }}>
         <button
           onClick={handleClear}
@@ -175,10 +304,12 @@ const Dashboard: React.FC = () => {
             fontSize: "1rem",
             boxShadow: "0 2px 8px #e0c3a5",
           }}
+          disabled={isLoading}
         >
           clear all
         </button>
       </div>
+
       <div style={{ marginTop: "32px" }}>
         <SignOutButton>
           <button

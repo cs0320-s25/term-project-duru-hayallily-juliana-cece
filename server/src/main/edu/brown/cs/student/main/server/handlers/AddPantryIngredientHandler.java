@@ -12,7 +12,6 @@ import spark.Route;
 import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 public class AddPantryIngredientHandler implements Route {
   private final JsonAdapter<Map<String, Object>> adapter;
@@ -43,43 +42,16 @@ public class AddPantryIngredientHandler implements Route {
         return adapter.toJson(responseMap);
       }
 
-      // Extract userId and ingredient details
+      // Extract userId and ingredient name
       String userId = (String) requestMap.get("userId");
-      String name = (String) requestMap.get("name");
+      String ingredientName = (String) requestMap.get("ingredientName");
 
-      if (userId == null || name == null) {
+      if (userId == null || ingredientName == null) {
         responseMap.put("result", "error_bad_request");
         responseMap.put("message", "User ID and ingredient name are required");
         response.status(400);
         return adapter.toJson(responseMap);
       }
-
-      // Create ingredient from request body
-      Ingredient ingredient = new Ingredient();
-      ingredient.setId(new Random().nextInt(1000000)); // Generate a random ID for the ingredient
-      ingredient.setName(name);
-
-      if (requestMap.containsKey("aisle") && requestMap.get("aisle") != null) {
-        ingredient.setAisle((String) requestMap.get("aisle"));
-      } else {
-        ingredient.setAisle("Other");
-      }
-
-      if (requestMap.containsKey("amount") && requestMap.get("amount") != null) {
-        ingredient.setAmount((Double) requestMap.get("amount"));
-      } else {
-        ingredient.setAmount(1.0);
-      }
-
-      if (requestMap.containsKey("unit") && requestMap.get("unit") != null) {
-        ingredient.setUnit((String) requestMap.get("unit"));
-      } else {
-        ingredient.setUnit("");
-      }
-
-      ingredient.setOriginalString(ingredient.getAmount() + " " +
-          ingredient.getUnit() + " " +
-          ingredient.getName());
 
       // Check if user exists
       if (!users.containsKey(userId)) {
@@ -87,13 +59,23 @@ public class AddPantryIngredientHandler implements Route {
         users.put(userId, new User(userId, "", ""));
       }
 
-      // Add ingredient to pantry
+      // Get the user
       User user = users.get(userId);
+
+      // Create a new ingredient from the string
+      Ingredient ingredient = new Ingredient();
+      ingredient.setName(ingredientName);
+      ingredient.setOriginalString(ingredientName);
+      ingredient.setAisle("Other"); // Default aisle for manually added items
+      ingredient.setAmount(1.0); // Default amount
+      ingredient.setUnit(""); // No unit for string-based items
+
+      // Add to pantry
       user.getPantry().addIngredient(ingredient);
 
       responseMap.put("result", "success");
       responseMap.put("message", "Ingredient added to pantry");
-      responseMap.put("pantry", user.getPantry());
+      responseMap.put("ingredient", ingredientName);
 
     } catch (Exception e) {
       responseMap.put("result", "error_processing");

@@ -71,9 +71,14 @@ const GroceryList: React.FC = () => {
   const [groceries, setGroceries] = useState<GroceryItem[]>([]);
   const [input, setInput] = useState<string>("");
   const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(false);
 
   // General fetch function
-  const fetchFromAPI = async (url: string, method: string = "GET", body?: any) => {
+  const fetchFromAPI = async (
+    url: string,
+    method: string = "GET",
+    body?: any
+  ) => {
     try {
       const response = await fetch(url, {
         method,
@@ -94,9 +99,14 @@ const GroceryList: React.FC = () => {
 
   // Fetch grocery items for the current user
   const fetchGroceryItems = async () => {
+    if (!userId) return;
+
+    setIsLoading(true);
     try {
-      if (!userId) return;
-      const data = await fetchFromAPI(`http://localhost:8080/api/users/${userId}/grocery`);
+      setError("");
+      const data = await fetchFromAPI(
+        `http://localhost:8080/api/users/${userId}/grocery`
+      );
       const formatted = (data.groceries || []).map((item: any) => ({
         name: item.name,
         checked: item.checked ?? false,
@@ -104,6 +114,8 @@ const GroceryList: React.FC = () => {
       setGroceries(formatted);
     } catch (error) {
       setError("Failed to load grocery list");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -123,10 +135,15 @@ const GroceryList: React.FC = () => {
   // Add new grocery item to the list
   const addGroceryItem = async (name: string) => {
     try {
-      await fetchFromAPI("http://localhost:8080/api/grocery/add-ingredient", "POST", {
-        userId,
-        name,
-      });
+      await fetchFromAPI(
+        "http://localhost:8080/api/grocery/add-ingredient",
+        "POST",
+        {
+          userId,
+          ingredientName: name, // Use correct parameter name
+        }
+      );
+      await fetchGroceryItems(); // Refresh list after adding
     } catch (error) {
       setError("Failed to add item");
     }
@@ -137,8 +154,6 @@ const GroceryList: React.FC = () => {
     const trimmed = input.trim();
     if (!trimmed || groceries.some((item) => item.name === trimmed)) return;
 
-    const newGrocery = { name: trimmed, checked: false };
-    setGroceries([...groceries, newGrocery]);
     setInput("");
     await addGroceryItem(trimmed);
   };
@@ -153,55 +168,130 @@ const GroceryList: React.FC = () => {
     if (!userId) return;
 
     const newCheckedStatus = !item.checked;
+
+    // Optimistically update UI
     setGroceries((prev) =>
       prev.map((grocery) =>
-        grocery.name === item.name ? { ...grocery, checked: newCheckedStatus } : grocery
+        grocery.name === item.name
+          ? { ...grocery, checked: newCheckedStatus }
+          : grocery
       )
     );
 
     try {
-      await fetchFromAPI("http://localhost:8080/api/grocery/add-ingredient", "POST", {
-        userId,
-        ingredientName: item.name,
-        checked: newCheckedStatus,
-      });
-
       if (newCheckedStatus) {
-        // Add to pantry
-        await fetchFromAPI("http://localhost:8080/api/pantry/add-ingredient", "POST", {
-          userId,
-          name: item.name,
-        });
+        // When checking an item:
+        // 1. First check it in the grocery list
+        await fetchFromAPI(
+          "http://localhost:8080/api/grocery/check-item",
+          "POST",
+          {
+            userId,
+            ingredientName: item.name,
+            checked: true,
+          }
+        );
 
-        console.log(item.name)
+        // 2. Add to pantry
+        await fetchFromAPI(
+          "http://localhost:8080/api/pantry/add-ingredient",
+          "POST",
+          {
+            userId,
+            ingredientName: item.name,
+          }
+        );
 
-        // Remove from grocery
-        await fetchFromAPI("http://localhost:8080/api/grocery/delete-ingredient", "POST", {
-          userId,
-          ingredientName: item.name,
-      
-        });
+        // 3. Remove from grocery list
+        await fetchFromAPI(
+          "http://localhost:8080/api/grocery/delete-ingredient",
+          "POST",
+          {
+            userId,
+            ingredientName: item.name,
+          }
+        );
 
+        // Remove item from UI since it's now in pantry
         setGroceries((prev) => prev.filter((g) => g.name !== item.name));
+
+        console.log(
+          `${item.name} moved to pantry and removed from grocery list`
+        );
+      } else {
+        // When unchecking an item (just uncheck it)
+        await fetchFromAPI(
+          "http://localhost:8080/api/grocery/check-item",
+          "POST",
+          {
+            userId,
+            ingredientName: item.name,
+            checked: false,
+          }
+        );
       }
     } catch (error) {
-      setError("Failed to move item to pantry");
-      console.error("Error moving item to pantry:", error);
-      // Rollback the status change
+      setError("Failed to update item status");
+      console.error("Error updating item:", error);
+
+      // Rollback the optimistic update
       setGroceries((prev) =>
         prev.map((grocery) =>
-          grocery.name === item.name ? { ...grocery, checked: !newCheckedStatus } : grocery
+          grocery.name === item.name
+            ? { ...grocery, checked: item.checked }
+            : grocery
         )
       );
     }
   };
 
+  // Clear all grocery items
+  const handleClearAll = async () => {
+    if (!userId) return;
+
+    try {
+      await fetchFromAPI("http://localhost:8080/api/grocery/clear", "POST", {
+        userId,
+      });
+      setGroceries([]);
+    } catch (error) {
+      setError("Failed to clear grocery list");
+    }
+  };
+
+  // Sort groceries: unchecked first, then checked
+  const sortedGroceries = [...groceries].sort((a, b) => {
+    if (a.checked === b.checked) return 0;
+    return a.checked ? 1 : -1;
+  });
+
+  const checkedCount = groceries.filter((item) => item.checked).length;
+
   return (
     <div style={cardStyle}>
-      <h2 style={{ color: "#3a5a40", fontWeight: "bold", fontSize: "2rem", marginBottom: "12px" }}>
+      <h2
+        style={{
+          color: "#3a5a40",
+          fontWeight: "bold",
+          fontSize: "2rem",
+          marginBottom: "12px",
+        }}
+      >
         🛒 Grocery List
       </h2>
-      {error && <p style={{ color: "#a23e3e", marginBottom: "12px", fontSize: "0.95rem" }}>{error}</p>}
+
+      {error && (
+        <p
+          style={{
+            color: "#a23e3e",
+            marginBottom: "12px",
+            fontSize: "0.95rem",
+          }}
+        >
+          {error}
+        </p>
+      )}
+
       <div style={{ display: "flex", gap: "8px", marginBottom: "18px" }}>
         <input
           type="text"
@@ -210,35 +300,87 @@ const GroceryList: React.FC = () => {
           onKeyDown={handleInputKeyDown}
           placeholder="Add an item..."
           style={inputStyle}
+          disabled={isLoading}
         />
-        <button onClick={handleAdd} style={buttonStyle}>
-          Add
+        <button onClick={handleAdd} style={buttonStyle} disabled={isLoading}>
+          {isLoading ? "Adding..." : "Add"}
+        </button>
+        <button
+          onClick={handleClearAll}
+          style={{
+            ...buttonStyle,
+            background: "#ffb4b4",
+            color: "#a23e3e",
+          }}
+          disabled={isLoading}
+        >
+          Clear All
         </button>
       </div>
+
+      {/* Show progress if there are any items */}
+      {groceries.length > 0 && (
+        <div
+          style={{
+            marginBottom: "16px",
+            fontSize: "0.9rem",
+            color: "#8fb996",
+            textAlign: "center",
+          }}
+        >
+          {checkedCount} of {groceries.length} items completed
+        </div>
+      )}
+
       <ul style={listStyle}>
-        {groceries.map((item, index) => (
-          <li key={`${item.name}-${index}`} style={itemStyle}>
-            <label style={{ display: "flex", alignItems: "center", flexGrow: 1 }}>
-              <input
-                type="checkbox"
-                checked={item.checked}
-                onChange={() => toggleGroceryItem(item)}
-                style={checkboxStyle}
-              />
-              <span
+        {isLoading ? (
+          <li
+            style={{ color: "#8fb996", marginTop: "16px", textAlign: "center" }}
+          >
+            Loading grocery items...
+          </li>
+        ) : groceries.length === 0 ? (
+          <li
+            style={{ color: "#8fb996", marginTop: "16px", textAlign: "center" }}
+          >
+            (nothing to buy!)
+          </li>
+        ) : (
+          sortedGroceries.map((item, index) => (
+            <li key={`${item.name}-${index}`} style={itemStyle}>
+              <label
                 style={{
-                  textDecoration: item.checked ? "line-through" : "none",
-                  color: item.checked ? "#8fb996" : "#3a5a40",
-                  fontSize: "1rem",
-                  marginLeft: "6px",
+                  display: "flex",
+                  alignItems: "center",
+                  flexGrow: 1,
+                  cursor: "pointer",
                 }}
               >
-                {item.name}
-              </span>
-            </label>
-          </li>
-        ))}
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => toggleGroceryItem(item)}
+                  style={checkboxStyle}
+                />
+                <span
+                  style={{
+                    textDecoration: item.checked ? "line-through" : "none",
+                    color: item.checked ? "#8fb996" : "#3a5a40",
+                    fontSize: "1rem",
+                    marginLeft: "6px",
+                  }}
+                >
+                  {item.name}
+                </span>
+              </label>
+              {item.checked && (
+                <span style={{ color: "#4CAF50", fontSize: "1.2rem" }}>✓</span>
+              )}
+            </li>
+          ))
+        )}
       </ul>
+
       <div style={{ marginTop: "32px" }}>
         <SignOutButton>
           <button
