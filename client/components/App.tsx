@@ -109,7 +109,7 @@ function App() {
               </li>
               <SignedOut>
                 <SignInButton mode="modal" redirectUrl="/dashboard">
-                  <button className="button">sign up</button>
+                  <button className="button" aria-label="sign in">sign up</button>
                 </SignInButton>
               </SignedOut>
               <SignedIn>

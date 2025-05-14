@@ -286,6 +286,7 @@ const clearGroceryList = async (userId: string) => {
       <h1 style={{ color: "#3a5a40" }}>🍽️ Your Meal Plan</h1>
       <div>
         <input
+          aria-label="recipie input"
           type="text"
           placeholder="Search for recipes..."
           value={input}

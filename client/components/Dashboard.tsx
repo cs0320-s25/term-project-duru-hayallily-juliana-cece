@@ -277,6 +277,7 @@ const Dashboard: React.FC = () => {
 
       <div style={{ margin: "24px 0 0 0" }}>
         <input
+          aria-label="pantry input"
           type="text"
           placeholder="Add pantry item..."
           value={input}
@@ -285,13 +286,14 @@ const Dashboard: React.FC = () => {
           style={inputStyle}
           disabled={isLoading}
         />
-        <button onClick={handleAdd} style={addButtonStyle} disabled={isLoading}>
+        <button aria-label="pantry add" onClick={handleAdd} style={addButtonStyle} disabled={isLoading}>
           {isLoading ? "Adding..." : "Add"}
         </button>
       </div>
 
       <div style={{ marginTop: "32px" }}>
         <button
+          aria-label="clear button"
           onClick={handleClear}
           style={{
             background: "#ffb4b4",

@@ -357,6 +357,7 @@ const GroceryList: React.FC = () => {
                 }}
               >
                 <input
+                  aria-label="grocery add"
                   type="checkbox"
                   checked={item.checked}
                   onChange={() => toggleGroceryItem(item)}
